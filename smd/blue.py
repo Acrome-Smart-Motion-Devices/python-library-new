@@ -21,7 +21,7 @@ class Device_ExtraCommands(enum.IntEnum):
 	# .......... 10
 
 
-Index_Device = enum.IntEnum('Index', [
+Index_Blue = enum.IntEnum('Index', [
 	'Header',
 	'DeviceID',
 	'DeviceFamily',
@@ -32,10 +32,44 @@ Index_Device = enum.IntEnum('Index', [
 	'SoftwareVersion',
 	'Baudrate', #'WritableStart' = iBaudrate
 	# user parameter start
-	
+	'OperationMode',
+	'Enable',
+	'CurrentSetting',
+	'Microstepping',
+	'MaxAcceleration',
+	'MaxDeceleration',
+	'MaxSpeed',
+	'MaxPosition',
+	'MinPosition',
+	'ExternalSetpoint_BufferSize',
+	'ExternalSetpoint_PhaseDelay',
+	'ExternalSetpoint_IntervalTime',
+	'CurrentPosition',
+	'CurrentSpeed',
+	'CurrentAccel',
+	'LimitSwitch_1',
+	'LimitSwitch_2',
+	'TargetVelocity',
+	'TargetPosition',
+	'DesiredTime',
+	'DesiredAccel',
+	'DesiredMaxSpeed',
+	'Setpoint',
 	# user parameter end
 	'CRCValue',
 ], start=0)
+
+
+def scan_BLUE_devices(port:SerialPort):
+	device = Blue(0, port)
+	available_devices = []
+
+	for id in range(0,255):
+		device._id = id
+		if(device.ping()):
+			available_devices.append(id)
+
+	return available_devices
 
 
 class Blue(SMD_Device):
@@ -45,27 +79,49 @@ class Blue(SMD_Device):
 	__RELEASE_URL = "https://api.github.com/repos/AAcrome-Smart-Motion-Devices/SMD-Blue-Firmware/releases/{version}"
 
 	
-	def __init__(self, ID, port:SerialPort, _test = False) -> bool:
+	def __init__(self, ID, port:SerialPort) -> bool:
 		self.__ack_size = 0
 		if ID > 254 or ID < 0:
 			raise ValueError("Device ID can not be higher than 254 or lower than 0!")
 		device_special_data = [
-            Data_(Index_Device.Header, 'B', False, 0x55),
-            Data_(Index_Device.DeviceID, 'B'),
-			Data_(Index_Device.DeviceFamily, 'B'),
-            Data_(Index_Device.PackageSize, 'B'),
-            Data_(Index_Device.Command, 'B'),
-			Data_(Index_Device.Status, 'B'),
-            Data_(Index_Device.HardwareVersion, 'I'),
-            Data_(Index_Device.SoftwareVersion, 'I'),
-            Data_(Index_Device.Baudrate, 'I'),
+            Data_(Index_Blue.Header, 'B', False, 0x55),
+            Data_(Index_Blue.DeviceID, 'B'),
+			Data_(Index_Blue.DeviceFamily, 'B'),
+            Data_(Index_Blue.PackageSize, 'B'),
+            Data_(Index_Blue.Command, 'B'),
+			Data_(Index_Blue.Status, 'B'),
+            Data_(Index_Blue.HardwareVersion, 'I'),
+            Data_(Index_Blue.SoftwareVersion, 'I'),
+            Data_(Index_Blue.Baudrate, 'I'),
 			# user parameter starts
-
+			Data_(Index_Blue.OperationMode, 'B'),
+			Data_(Index_Blue.Enable, 'B'),
+			Data_(Index_Blue.CurrentSetting, 'B'),
+			Data_(Index_Blue.Microstepping, 'B'),
+			Data_(Index_Blue.MaxAcceleration, 'f'),
+			Data_(Index_Blue.MaxDeceleration, 'f'),
+			Data_(Index_Blue.MaxSpeed, 'f'),
+			Data_(Index_Blue.MaxPosition, 'i'),
+			Data_(Index_Blue.MinPosition, 'i'),
+			Data_(Index_Blue.ExternalSetpoint_BufferSize, 'H'),
+			Data_(Index_Blue.ExternalSetpoint_PhaseDelay, 'H'),
+			Data_(Index_Blue.ExternalSetpoint_IntervalTime, 'I'),
+			Data_(Index_Blue.CurrentPosition, 'd'),
+			Data_(Index_Blue.CurrentSpeed, 'd'),
+			Data_(Index_Blue.CurrentAccel, 'd'),
+			Data_(Index_Blue.LimitSwitch_1, 'B'),
+			Data_(Index_Blue.LimitSwitch_2, 'B'),
+			Data_(Index_Blue.TargetVelocity, 'f'),
+			Data_(Index_Blue.TargetPosition, 'i'),
+			Data_(Index_Blue.DesiredTime, 'f'),
+			Data_(Index_Blue.DesiredAccel, 'f'),
+			Data_(Index_Blue.DesiredMaxSpeed, 'f'),
+			Data_(Index_Blue.Setpoint, 'f'),
 			# user parameter end			
-            Data_(Index_Device.CRCValue, 'I'),
+            Data_(Index_Blue.CRCValue, 'I'),
         ]
 		super().__init__(ID, self._PRODUCT_TYPE, device_special_data, port)
-		self._vars[Index_Device.DeviceID].value(ID)
+		self._vars[Index_Blue.DeviceID].value(ID)
 
 	# user start for extra commands.
 	#def command(self): 
@@ -135,11 +191,11 @@ class Blue(SMD_Device):
 					time.sleep(0.1)
 
 					# Close serial port
-					serial_settings = self.__ph.get_settings()
-					self.__ph.close()
+					serial_settings = self._port._ph.get_settings()
+					self._port._ph.close()
 
 					# Upload binary
-					args = ['-p', self.__ph.portstr, '-b', str(115200), '-e', '-w', '-v', fw_file.name]
+					args = ['-p', self._port._ph.portstr, '-b', str(115200), '-e', '-w', '-v', fw_file.name]
 					stm32loader_main(*args)
 
 					# Delete uploaded binary
@@ -147,8 +203,8 @@ class Blue(SMD_Device):
 						fw_file.close()
 
 					# Re open port to the user with saved settings
-					self.__ph.apply_settings(serial_settings)
-					self.__ph.open()
+					self._port._ph.apply_settings(serial_settings)
+					self._port._ph.open()
 					return True
 
 				else:
@@ -157,3 +213,14 @@ class Blue(SMD_Device):
 				raise Exception("Could not fetch requested MD5 file! Check your connection to GitHub.")
 		else:
 			raise Exception("Could not found requested firmware files list! Check your connection to GitHub.")
+		
+	def enable_torque(self, en: bool):
+		""" Enable power to the motor of the driver.
+
+    	Args:
+    	    id (int): The device ID of the driver
+    	    en (bool): Enable. True enables the torque.
+    	"""
+
+		self.set_variables([[Index_Blue.TorqueEnable, en]])
+		self._post_sleep()

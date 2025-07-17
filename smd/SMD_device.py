@@ -6,10 +6,21 @@ import enum
 from smd.serial_port import SerialPort
 '''
 COMMUNICATION PACKAGE => 
-
 HEADER, ID, DEVICE_FAMILY, PACKAGE_SIZE, COMMAND, STATUS, .............. DATA ................. , CRC
-
 '''
+
+SMD_SERIAL_HEADER = 0x55
+SMD_PING_PACKAGE_SIZE = 10
+
+Index_Protocol = enum.IntEnum('Index', [
+    'Header',
+    'DeviceID',
+    'DeviceFamily',
+    'PackageSize',
+    'Command',
+    'Status',
+    'CRCValue',
+    ], start=0)
 
 #Classical Device Indexes
 Index_Device_Classical = enum.IntEnum('Index', [
@@ -24,23 +35,26 @@ Index_Device_Classical = enum.IntEnum('Index', [
     'Baudrate',
 ], start=0)
 
-
 #Classical_Commands
 class Device_Commands(enum.IntEnum):
-    PING = 0x00,
-    READ = 0x01,
-    WRITE = 0x02,
-    REBOOT = 0x10,
-    EEPROM_WRITE = 0x20,
-    FACTORY_RESET = 0x25,
-    BL_JUMP = 0x30,
-    WRITE_SYNC = 0x40,
-    ACK = 0x80,
-    WRITE_ACK = 0x80 | 0x02
+	ACK = 0x80,
+	SYNC = 0x40,
 
+	PING = 0x00,
+	WRITE = 0x01,
+	READ = 0x02,
+	EEPROM_SAVE = 0x03,
+	ERROR_CLEAR = 0x04,
+	REBOOT = 0x05,
+	HARD_RESET = 0x06,
+	BL_JUMP = 0x07,
+	ENTER_CONFIG = 0x08,
+	ENTER_OPERATION = 0x09,
 
-def ping_devices():
-    pass
+	WRITE_ACK = 0x80 | 0x01         # ACK | WRITE
+	WRITE_SYNC = 0x40 | 0x01        # SYNC | WRITE
+	EEPROM_SAVE_ACK = 0x80 | 0x03   # ACK | EEPROM_WRITE, # Unimplemented
+	EEPROM_SAVE_SYNC = 0x40 | 0x03  # SYNC | EEPROM_WRITE
 
 def set_variables_directly(header:int, device_family:int, id:int, status:int=0, *idx_val_pairs, ack = False, port:SerialPort):
         # returns : did ACK come?
@@ -62,9 +76,9 @@ def set_variables_directly(header:int, device_family:int, id:int, status:int=0, 
         
         flattened_list = [item for sublist in idx_val_pairs for item in sublist]
 
-        struct_out = list(struct.pack(fmt_str, *[header, id, device_family, size + 8, Device_Commands.WRITE, status, *flattened_list]))
+        struct_out = list(struct.pack(fmt_str, *[header, id, device_family, size + SMD_PING_PACKAGE_SIZE, Device_Commands.WRITE, status, *flattened_list]))
         struct_out = bytes(struct_out) + struct.pack('<' + 'I', CRC32.calc(struct_out))
-        ack_size = 8
+        ack_size = SMD_PING_PACKAGE_SIZE
 
 
         port._ph.write(struct_out)
@@ -90,6 +104,10 @@ class SMD_Device():
         self._ack_size = 0
         self.__post_sleep = 0.01
         self.__device_init_sleep = 3
+        self.write_ack_enable = False
+
+    def enable_get_ack(self):
+        self.write_ack_enable = True
 
     def _init_sleep(self):
         time.sleep(self.__device_init_sleep)
@@ -102,7 +120,6 @@ class SMD_Device():
 
     def _read_port(self, size) -> bytes:
         return self._port._read_bus(size=size)
-        
     
     def _parse_received(self, data):
         id = data[Index_Device_Classical.DeviceID]
@@ -125,9 +142,7 @@ class SMD_Device():
             return False
         if len(ret) == self._ack_size:
             if (CRC32.calc(ret[:-4]) == struct.unpack('<I', ret[-4:])[0]):
-                if ret[2] > 8:
-                    #print("parse daha yazilmadi.")
-                    #print(list(ret))
+                if ret[Index_Protocol.PackageSize] > SMD_PING_PACKAGE_SIZE:
                     self._parse_received(ret)
                     return True
                 else:
@@ -145,36 +160,30 @@ class SMD_Device():
             return True
         else:
             return False 
+        
+    def _pure_command_send(self, command:int):
+        fmt_str = '<BBBBBB'
+        struct_out = list(struct.pack(fmt_str, *[self._header, self._id, self._device_family, SMD_PING_PACKAGE_SIZE, command, 0]))
+        struct_out = bytes(struct_out) + struct.pack('<I', CRC32.calc(struct_out))
+        self._write_port(struct_out)
+        return struct_out
 
     def ping(self):
-        fmt_str = '<BBBBBB'
-        struct_out = list(struct.pack(fmt_str, *[self._header, self._id, self._device_family, 10, Device_Commands.PING, 0]))
-        struct_out = bytes(struct_out) + struct.pack('<I', CRC32.calc(struct_out))
-        self._ack_size = 10
-        #burayi kontrol et.
-        self._write_port(struct_out)
-        
+        self._pure_command_send(Device_Commands.PING)
+        self._ack_size = SMD_PING_PACKAGE_SIZE
         if self._read_ack():
             return True
         else:
             return False
-        
-    def write_command(self, command_number):
-        fmt_str = '<BBBBBB'
-        struct_out = list(struct.pack(fmt_str, *[self._header, self._id, self._device_family, 10, command_number, 0]))
-        struct_out = bytes(struct_out) + struct.pack('<I', CRC32.calc(struct_out))
-        self._ack_size = 0
-        self._write_port(struct_out)
-    
     
     def get_variables(self, *indexes):
         self._ack_size = 0
-        fmt_str = '<BBBB'+'B'*len(indexes)
-        struct_out = list(struct.pack(fmt_str, *[self._header, self._id, len(indexes) + 8, Device_Commands.READ, *indexes]))
+        fmt_str = '<BBBBBB'+'B'*len(indexes)
+        struct_out = list(struct.pack(fmt_str, *[self._header, self._id, self._device_family ,len(indexes) + SMD_PING_PACKAGE_SIZE, Device_Commands.READ, 0, *indexes]))
         struct_out = bytes(struct_out) + struct.pack('<' + 'I', CRC32.calc(struct_out))
         for i in indexes:
             self._ack_size += (self._vars[int(i)].size() + 1)
-        self._ack_size += 8
+        self._ack_size += SMD_PING_PACKAGE_SIZE
 
         self._write_port(struct_out)
 
@@ -185,7 +194,7 @@ class SMD_Device():
 
     def set_variables(self, *idx_val_pairs, ack = False):
         # returns : did ACK come?
-        fmt_str = '<BBBB'
+        fmt_str = '<BBBBBB'
         var_count = 0
         size = 0
         for one_pair in idx_val_pairs:
@@ -201,58 +210,31 @@ class SMD_Device():
         
         flattened_list = [item for sublist in idx_val_pairs for item in sublist]
 
-        struct_out = list(struct.pack(fmt_str, *[self._header, self._id, size + 8, Device_Commands.WRITE, *flattened_list]))
+        print(flattened_list)
+
+        struct_out = list(struct.pack(fmt_str, *[self._header, self._id, self._device_family, size + SMD_PING_PACKAGE_SIZE, Device_Commands.WRITE, 0, *flattened_list]))
         struct_out = bytes(struct_out) + struct.pack('<' + 'I', CRC32.calc(struct_out))
-        self._ack_size = 8
+        self._ack_size = SMD_PING_PACKAGE_SIZE
 
         self._write_port(struct_out)
-        if self._read_ack():
-            return True
-        else:
-            return False
+        if(self.write_ack_enable):
+            if self._read_ack():
+                return True
+            else:
+                return False
+        return False
         
     def reboot(self):
-        fmt_str = '<BBBB'
-        struct_out = list(struct.pack(fmt_str, *[self._header, self._id, 8, Device_Commands.REBOOT]))
-        struct_out = bytes(struct_out) + struct.pack('<' + 'I', CRC32.calc(struct_out))    
-        try:     
-            self._write_port(struct_out)
-        except:
-            print("port error.....")
+        self._pure_command_send(Device_Commands.REBOOT)
 	
     def eeprom_save(self):
-        fmt_str = '<BBBB'
-        struct_out = list(struct.pack(fmt_str, *[self._header, self._id, 8, Device_Commands.EEPROM_WRITE]))
-        struct_out = bytes(struct_out) + struct.pack('<' + 'I', CRC32.calc(struct_out))
-        self._write_port(struct_out)
-        try:     
-            self._write_port(struct_out)
-            if self._read_ack(id):
-                return True
-        except:
-            print("port error.....")
-
+        self._pure_command_send(Device_Commands.EEPROM_SAVE)
+        
     def factory_reset(self, ack=False):
-        fmt_str = '<BBBB'            
-        struct_out = list(struct.pack(fmt_str, *[self._header, self._id, 8, Device_Commands.FACTORY_RESET]))
-        struct_out = bytes(struct_out) + struct.pack('<' + 'I', CRC32.calc(struct_out))
-
-        self._write_port(struct_out)
-        if ack:
-            try:     
-                self._write_port(struct_out)
-                if self._read_ack(id):
-                    return True
-            except:
-                return False
+        self._pure_command_send(Device_Commands.FACTORY_RESET)
 
     def enter_bootloader(self):
-        fmt_str = '<BBBB'            
-        struct_out = list(struct.pack(fmt_str, *[self._header, self._id, 8, Device_Commands.FACTORY_RESET]))
-        struct_out = bytes(struct_out) + struct.pack('<' + 'I', CRC32.calc(struct_out))
-
-        self._write_port(struct_out)
-
+        self._pure_command_send(Device_Commands.BL_JUMP)
 
     def get_driver_info(self):
         """ Get hardware and software versions from the driver

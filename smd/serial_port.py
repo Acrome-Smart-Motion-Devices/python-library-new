@@ -10,19 +10,22 @@ class SerialPort:
             self._ph = serial.Serial(port=self.port_name, baudrate=self.baudrate, timeout=self.timeout)
 
     def close_port(self):
-        if self._ph and self._ph.is_open:
-            self._ph.reset_input_buffer()
-            self._ph.reset_output_buffer()
-            self._ph.close()
-            print(f"Port '{self.port_name}' kapatıldı.")
+        if self.isTest:
+            print(f"virtual port destroyed.")
         else:
-            print(f"Port '{self.port_name}' zaten kapalı.")
+            if self._ph and self._ph.is_open:
+                self._ph.reset_input_buffer()
+                self._ph.reset_output_buffer()
+                self._ph.close()
+                print(f"Port '{self.port_name}' shut down.")
+            else:
+                print(f"Port '{self.port_name}' already closed.")
 
     def __del__(self):
         try:
             self.close_port()
         except Exception as e:
-            print(f"AcromeDevicesPort yok edilirken bir hata oluştu: {e}")
+            print(f"Port yok edilirken bir hata oluştu: {e}")
         
     def _write_bus(self,data):
         if(self.isTest == True):
@@ -37,6 +40,7 @@ class SerialPort:
             return self._ph.read(size=size)
         else:
             print("Read Bus(TEST!)")
+            return None
 
     def _no_timeout(self):
         notimeout = 50 #in seconds

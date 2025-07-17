@@ -101,7 +101,7 @@ class Red(SMD_Device):
     _STATUS_KEY_LIST = ['EEPROM', 'Software Version', 'Hardware Version']
     __RELEASE_URL = "https://api.github.com/repos/Acrome-Smart-Motion-Devices/SMD-Red-Firmware/releases/{version}"
 
-    def __init__(self, ID, port:SerialPort, _test = False) -> bool:
+    def __init__(self, ID, port:SerialPort) -> bool:
 		
         self.__ack_size = 0
         self._config = None
@@ -274,7 +274,7 @@ class Red(SMD_Device):
         if (br < 3053) or (br > 12500000):
             raise ValueError("{br} is not in acceptable range!")
 
-        self.set_variables([[Index_Red.Baudrate, br]])
+        self.set_variables([Index_Red.Baudrate, br])
         self._post_sleep()
         self.eeprom_save()
         self._post_sleep()
@@ -290,7 +290,7 @@ class Red(SMD_Device):
         Returns:
             list | None: Returns the list containing the baudrate, otherwise None.
         """
-        return self.get_variables([Index_Red.Baudrate])[0]
+        return self.get_variables(Index_Red.Baudrate)[0]
     
     def reset_encoder(self): #burayi kontrol et.
         """ Reset the encoder.
@@ -309,7 +309,7 @@ class Red(SMD_Device):
             en (bool): Enable. True enables the torque.
         """
 
-        self.set_variables([[Index_Red.TorqueEnable, en]])
+        self.set_variables([Index_Red.TorqueEnable, en])
         self._post_sleep()
 
     def pid_tuner(self):
@@ -330,7 +330,7 @@ class Red(SMD_Device):
             mode (OperationMode): One of the PWM, Position, Velocity, Torque modes.
         """
 
-        self.set_variables([[Index_Red.OperationMode, mode]])
+        self.set_variables([Index_Red.OperationMode, mode])
         self._post_sleep()
 
     def get_operation_mode(self):
@@ -342,7 +342,7 @@ class Red(SMD_Device):
         Returns:
             list | None: Returns the list containing the operation mode, otherwise None.
         """
-        return self.get_variables([Index_Red.OperationMode])[0]
+        return self.get_variables(Index_Red.OperationMode)[0]
 
     def set_shaft_cpr(self, cpr: float):
         """ Set the count per revolution (CPR) of the motor output shaft.
@@ -351,7 +351,7 @@ class Red(SMD_Device):
             id (int): The device ID of the driver.
             cpr (float): The CPR value of the output shaft/
         """
-        self.set_variables([[Index_Red.OutputShaftCPR, cpr]])
+        self.set_variables([Index_Red.OutputShaftCPR, cpr])
         self._post_sleep()
 
     def get_shaft_cpr(self):
@@ -363,7 +363,7 @@ class Red(SMD_Device):
         Returns:
             list | None: Returns the list containing the output shaft CPR, otherwise None.
         """
-        return self.get_variables([Index_Red.OutputShaftCPR])[0]
+        return self.get_variables(Index_Red.OutputShaftCPR)[0]
 
     def set_shaft_rpm(self, rpm: float):
         """ Set the revolution per minute (RPM) value of the output shaft at 12V rating.
@@ -372,7 +372,7 @@ class Red(SMD_Device):
             id (int): The device ID of the driver.
             rpm (float): The RPM value of the output shaft at 12V
         """
-        self.set_variables([[Index_Red.OutputShaftRPM, rpm]])
+        self.set_variables([Index_Red.OutputShaftRPM, rpm])
         self._post_sleep()
 
     def get_shaft_rpm(self):
@@ -384,7 +384,7 @@ class Red(SMD_Device):
         Returns:
             list | None: Returns the list containing the output shaft RPM characteristics, otherwise None.
         """
-        return self.get_variables([Index_Red.OutputShaftRPM])[0]
+        return self.get_variables(Index_Red.OutputShaftRPM)
 
     def set_user_indicator(self):
         """ Set the user indicator color for 5 seconds. The user indicator color is cyan.
@@ -392,7 +392,7 @@ class Red(SMD_Device):
         Args:
             id (int): The device ID of the driver.
         """
-        self.set_variables([[Index_Red.UserIndicator, 1]])
+        self.set_variables([Index_Red.UserIndicator, 1])
         self._post_sleep()
 
     def set_position_limits(self, plmin: int, plmax: int):
@@ -406,7 +406,7 @@ class Red(SMD_Device):
             plmin (int): The minimum position limit.
             plmax (int): The maximum position limit.
         """
-        self.set_variables([[Index_Red.MinimumPositionLimit, plmin], [Index_Red.MaximumPositionLimit, plmax]])
+        self.set_variables([Index_Red.MinimumPositionLimit, plmin], [Index_Red.MaximumPositionLimit, plmax])
         self._post_sleep()
 
     def get_position_limits(self):
@@ -418,7 +418,7 @@ class Red(SMD_Device):
         Returns:
             list | None: Returns the list containing the position limits, otherwise None.
         """
-        return self.get_variables( [Index_Red.MinimumPositionLimit, Index_Red.MaximumPositionLimit])
+        return self.get_variables(Index_Red.MinimumPositionLimit, Index_Red.MaximumPositionLimit)
 
     def set_torque_limit(self, tl: int):
         """ Set the torque limit of the driver in terms of milliamps (mA).
@@ -429,7 +429,7 @@ class Red(SMD_Device):
             id (int): The device ID of the driver.
             tl (int): New torque limit (mA)
         """
-        self.set_variables( [[Index_Red.TorqueLimit, tl]])
+        self.set_variables([Index_Red.TorqueLimit, tl])
         self._post_sleep()
 
     def get_torque_limit(self):
@@ -441,7 +441,7 @@ class Red(SMD_Device):
         Returns:
             list | None: Returns the list containing the torque limit, otherwise None.
         """
-        return self.get_variables([Index_Red.TorqueLimit])[0]
+        return self.get_variables(Index_Red.TorqueLimit)[0]
 
     def set_velocity_limit(self, vl: int):
         """ Set the velocity limit for the motor output shaft in terms of RPM. The velocity limit
@@ -451,7 +451,7 @@ class Red(SMD_Device):
             id (int): The device ID of the driver.
             vl (int): New velocity limit (RPM)
         """
-        self.set_variables([[Index_Red.VelocityLimit, vl]])
+        self.set_variables([Index_Red.VelocityLimit, vl])
         self._post_sleep()
 
     def get_velocity_limit(self):
@@ -463,7 +463,7 @@ class Red(SMD_Device):
         Returns:
             list | None: Returns the list containing the velocity limit, otherwise None.
         """
-        return self.get_variables([Index_Red.VelocityLimit])[0]
+        return self.get_variables(Index_Red.VelocityLimit)[0]
 
     def set_position(self, sp: int):
         """ Set the desired setpoint for the position control in terms of encoder ticks.
@@ -472,7 +472,7 @@ class Red(SMD_Device):
             id (int): The device ID of the driver.
             sp (int | float): Position control setpoint.
         """
-        self.set_variables([[Index_Red.PositionControlMode, 0],[Index_Red.SetPosition, sp]])
+        self.set_variables([Index_Red.PositionControlMode, 0],[Index_Red.SetPosition, sp])
         self._post_sleep()
 
     def get_position(self):
@@ -484,7 +484,7 @@ class Red(SMD_Device):
         Returns:
             list | None: Returns the list containing the current position, otherwise None.
         """
-        return self.get_variables([Index_Red.PresentPosition])[0]
+        return self.get_variables(Index_Red.PresentPosition)[0]
     
     def goTo(self, target_position, time_ = 0, maxSpeed = 0, accel = 0, 
              blocking: bool = False, encoder_tick_close_counter = 10):
@@ -519,9 +519,9 @@ class Red(SMD_Device):
                 encoder_tick_close_counter (int): The number of encoder ticks that the motor should close enough to the target position to be considered reached.
         """
 
-        self.set_variables([[Index_Red.PositionControlMode, 1]])
-        self.set_variables([[Index_Red.SCurveTime, time_],[Index_Red.SCurveMaxVelocity, maxSpeed],[Index_Red.ScurveAccel, accel]])
-        self.set_variables([[Index_Red.SCurveSetpoint, target_position]])
+        self.set_variables([Index_Red.PositionControlMode, 1])
+        self.set_variables([Index_Red.SCurveTime, time_],[Index_Red.SCurveMaxVelocity, maxSpeed],[Index_Red.ScurveAccel, accel])
+        self.set_variables([Index_Red.SCurveSetpoint, target_position])
 
         self._post_sleep()
 
@@ -547,14 +547,14 @@ class Red(SMD_Device):
                 encoder_tick_close_counter (int): The number of encoder ticks that the motor should close enough to the target position to be considered reached.
         """
         
-        self.set_variables([[Index_Red.VelocityControlMode, 1]])
-        self.set_variables([[Index_Red.SCurveMaxVelocity, speed],[Index_Red.ScurveAccel, MotorConstants.MAX_ACCEL]])
-        self.set_variables([[Index_Red.SCurveSetpoint, target_position]])
+        self.set_variables([Index_Red.VelocityControlMode, 1])
+        self.set_variables([Index_Red.SCurveMaxVelocity, speed],[Index_Red.ScurveAccel, MotorConstants.MAX_ACCEL])
+        self.set_variables([Index_Red.SCurveSetpoint, target_position])
 
         self._post_sleep()
 
         while(blocking):
-            if (abs(target_position - self.get_position(id)) <= encoder_tick_close_counter):
+            if (abs(target_position - self.get_position()) <= encoder_tick_close_counter):
                 break
 
     def set_velocity(self, sp: float, accel = 0):
@@ -572,14 +572,14 @@ class Red(SMD_Device):
         """
         if accel == MotorConstants.MAX_ACCEL:
             accel = 0
-            self.set_variables([[Index_Red.SetVelocityAcceleration, accel]])
-            self.set_variables([[Index_Red.SetVelocity, sp]])
+            self.set_variables([Index_Red.SetVelocityAcceleration, accel])
+            self.set_variables([Index_Red.SetVelocity, sp])
 
         elif accel == 0:
-            self.set_variables([[Index_Red.SetVelocity, sp]])
+            self.set_variables([Index_Red.SetVelocity, sp])
         else:
-            self.set_variables([[Index_Red.SetVelocityAcceleration, accel]])
-            self.set_variables([[Index_Red.SetVelocity, sp]])
+            self.set_variables([Index_Red.SetVelocityAcceleration, accel])
+            self.set_variables([Index_Red.SetVelocity, sp])
         
         self._post_sleep()
 
@@ -592,7 +592,7 @@ class Red(SMD_Device):
         Returns:
             list | None: Returns the list containing the current velocity, otherwise None.
         """
-        return self.get_variables([Index_Red.PresentVelocity])[0]
+        return self.get_variables(Index_Red.PresentVelocity)[0]
 
     def set_torque(self, sp: float):
         """ Set the desired setpoint for the torque control in terms of milliamps (mA).
@@ -601,7 +601,7 @@ class Red(SMD_Device):
             id (int): The device ID of the driver.
             sp (int | float): Torque control setpoint.
         """
-        self.set_variables([[Index_Red.SetTorque, sp]])
+        self.set_variables([Index_Red.SetTorque, sp])
         self._post_sleep()
 
     def get_torque(self):
@@ -613,7 +613,7 @@ class Red(SMD_Device):
         Returns:
             list | None: Returns the list containing the current, otherwise None.
         """
-        return self.get_variables([Index_Red.MotorCurrent])[0]
+        return self.get_variables(Index_Red.MotorCurrent)[0]
 
     def set_duty_cycle(self, pct: float):
         """ Set the duty cycle to the motor for PWM control mode in terms of percentage.
@@ -623,7 +623,7 @@ class Red(SMD_Device):
             id (int): The device ID of the driver.
             pct (int | float): Duty cycle percentage.
         """
-        self.set_variables([[Index_Red.SetDutyCycle, pct]])
+        self.set_variables([Index_Red.SetDutyCycle, pct])
         self._post_sleep()
 
     def get_analog_port(self):
@@ -636,7 +636,7 @@ class Red(SMD_Device):
         Returns:
             list | None: Returns the list containing the ADC conversion of the port, otherwise None.
         """
-        return self.get_variables([Index_Red.AnalogPort])[0]
+        return self.get_variables(Index_Red.AnalogPort)[0]
 
     def set_control_parameters_position(self, p=None, i=None, d=None, db=None, ff=None, ol=None):
         """ Set the control block parameters for position control mode.
@@ -654,8 +654,7 @@ class Red(SMD_Device):
         """
         index_list = [Index_Red.PositionPGain, Index_Red.PositionIGain, Index_Red.PositionDGain, Index_Red.PositionDeadband, Index_Red.PositionFF, Index_Red.PositionOutputLimit]
         val_list = [p, i, d, db, ff, ol]
-
-        self.set_variables([list(pair) for pair in zip(index_list, val_list) if pair[1] is not None])
+        self.set_variables(*[list(pair) for pair in zip(index_list, val_list) if pair[1] is not None])
         self._post_sleep()
 
     def get_control_parameters_position(self):
@@ -668,7 +667,7 @@ class Red(SMD_Device):
             list | None: Returns the list [P, I, D, FF, DB, OUTPUT_LIMIT], otherwise None.
         """
 
-        return self.get_variables([Index_Red.PositionPGain, Index_Red.PositionIGain, Index_Red.PositionDGain, Index_Red.PositionDeadband, Index_Red.PositionFF, Index_Red.PositionOutputLimit])
+        return self.get_variables(*[Index_Red.PositionPGain, Index_Red.PositionIGain, Index_Red.PositionDGain, Index_Red.PositionDeadband, Index_Red.PositionFF, Index_Red.PositionOutputLimit])
 
     def set_control_parameters_velocity(self, p=None, i=None, d=None, db=None, ff=None, ol=None):
         """ Set the control block parameters for velocity control mode.
@@ -687,7 +686,7 @@ class Red(SMD_Device):
         index_list = [Index_Red.VelocityPGain, Index_Red.VelocityIGain, Index_Red.VelocityDGain, Index_Red.VelocityDeadband, Index_Red.VelocityFF, Index_Red.VelocityOutputLimit]
         val_list = [p, i, d, db, ff, ol]
 
-        self.set_variables([list(pair) for pair in zip(index_list, val_list) if pair[1] is not None])
+        self.set_variables(*[list(pair) for pair in zip(index_list, val_list) if pair[1] is not None])
         self._post_sleep()
 
     def get_control_parameters_velocity(self):
@@ -699,7 +698,7 @@ class Red(SMD_Device):
         Returns:
             list | None: Returns the list [P, I, D, FF, DB, OUTPUT_LIMIT], otherwise None.
         """
-        return self.get_variables([Index_Red.VelocityPGain, Index_Red.VelocityIGain, Index_Red.VelocityDGain, Index_Red.VelocityDeadband, Index_Red.VelocityFF, Index_Red.VelocityOutputLimit])
+        return self.get_variables(*[Index_Red.VelocityPGain, Index_Red.VelocityIGain, Index_Red.VelocityDGain, Index_Red.VelocityDeadband, Index_Red.VelocityFF, Index_Red.VelocityOutputLimit])
 
     def set_control_parameters_torque(self, p=None, i=None, d=None, db=None, ff=None, ol=None):
         """ Set the control block parameters for torque control mode.
@@ -718,7 +717,7 @@ class Red(SMD_Device):
         index_list = [Index_Red.TorquePGain, Index_Red.TorqueIGain, Index_Red.TorqueDGain, Index_Red.TorqueDeadband, Index_Red.TorqueFF, Index_Red.TorqueOutputLimit]
         val_list = [p, i, d, db, ff, ol]
 
-        self.set_variables([list(pair) for pair in zip(index_list, val_list) if pair[1] is not None])
+        self.set_variables(*[list(pair) for pair in zip(index_list, val_list) if pair[1] is not None])
         self._post_sleep()
 
     def get_control_parameters_torque(self):
@@ -730,13 +729,13 @@ class Red(SMD_Device):
         Returns:
             list | None: Returns the list [P, I, D, FF, DB, OUTPUT_LIMIT], otherwise None.
         """
-        return self.get_variables([Index_Red.TorquePGain, Index_Red.TorqueIGain, Index_Red.TorqueDGain, Index_Red.TorqueDeadband, Index_Red.TorqueFF, Index_Red.TorqueOutputLimit])
+        return self.get_variables(*[Index_Red.TorquePGain, Index_Red.TorqueIGain, Index_Red.TorqueDGain, Index_Red.TorqueDeadband, Index_Red.TorqueFF, Index_Red.TorqueOutputLimit])
 
 
 
 
 
-def scan_SMD_Red_Devices(port:SerialPort):
+def scan_Red_Devices(port:SerialPort):
     # burada herhangi bir nesne olusturmadan ping atmasi icin yeniden duzenlenecek.
     id_list = []
     for i in range(255):
