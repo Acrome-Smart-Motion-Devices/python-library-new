@@ -48,7 +48,6 @@ class SerialPort:
             print(f"port timeout update is setted to {notimeout} (TEST!)")
         else:
             self._ph.timeout = notimeout
-        
 
     def set_timeout(self, timeout):
         if(self.isTest):

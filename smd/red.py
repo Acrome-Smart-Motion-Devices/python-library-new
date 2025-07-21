@@ -733,9 +733,7 @@ class Red(SMD_Device):
 
 
 
-
-
-def scan_Red_Devices(port:SerialPort):
+def scan_red_devices(port:SerialPort):
     # burada herhangi bir nesne olusturmadan ping atmasi icin yeniden duzenlenecek.
     id_list = []
     for i in range(255):

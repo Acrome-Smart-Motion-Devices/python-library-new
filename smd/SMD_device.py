@@ -37,24 +37,26 @@ Index_Device_Classical = enum.IntEnum('Index', [
 
 #Classical_Commands
 class Device_Commands(enum.IntEnum):
-	ACK = 0x80,
-	SYNC = 0x40,
+    ACK = 0x80
+    SYNC = 0x40
 
-	PING = 0x00,
-	WRITE = 0x01,
-	READ = 0x02,
-	EEPROM_SAVE = 0x03,
-	ERROR_CLEAR = 0x04,
-	REBOOT = 0x05,
-	HARD_RESET = 0x06,
-	BL_JUMP = 0x07,
-	ENTER_CONFIG = 0x08,
-	ENTER_OPERATION = 0x09,
+    PING = 0x00
+    WRITE = 0x01
+    READ = 0x02
+    EEPROM_SAVE = 0x03
+    ERROR_CLEAR = 0x04
+    REBOOT = 0x05
+    HARD_RESET = 0x06
+    BL_JUMP = 0x07
+    ENTER_CONFIGURATION = 0x08
+    ENTER_OPERATION = 0x09
 
-	WRITE_ACK = 0x80 | 0x01         # ACK | WRITE
-	WRITE_SYNC = 0x40 | 0x01        # SYNC | WRITE
-	EEPROM_SAVE_ACK = 0x80 | 0x03   # ACK | EEPROM_WRITE, # Unimplemented
-	EEPROM_SAVE_SYNC = 0x40 | 0x03  # SYNC | EEPROM_WRITE
+    ENTER_CONFIGURATION_ACK = 0x80 | 0x08       # ACK | ENTER_CONFIGURATION
+    ENTER_OPERATION_ACK = 0x80 | 0x09           # ACK | ENTER_OPERATION
+    WRITE_ACK = 0x80 | 0x01                     # ACK | WRITE
+    WRITE_SYNC = 0x40 | 0x01                    # SYNC | WRITE
+    EEPROM_SAVE_ACK = 0x80 | 0x03               # ACK | EEPROM_WRITE
+    EEPROM_SAVE_SYNC = 0x40 | 0x03              # SYNC | EEPROM_WRITE
 
 def set_variables_directly(header:int, device_family:int, id:int, status:int=0, *idx_val_pairs, ack = False, port:SerialPort):
         # returns : did ACK come?
@@ -235,6 +237,12 @@ class SMD_Device():
 
     def enter_bootloader(self):
         self._pure_command_send(Device_Commands.BL_JUMP)
+
+    def enter_operation(self):
+        self._pure_command_send(Device_Commands.ENTER_OPERATION)
+
+    def enter_configuration(self):
+        self._pure_command_send(Device_Commands.ENTER_CONFIGURATION)
 
     def get_driver_info(self):
         """ Get hardware and software versions from the driver

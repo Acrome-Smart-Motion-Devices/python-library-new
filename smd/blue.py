@@ -13,12 +13,10 @@ from smd.SMD_device import *
 
 # enter here for extra commands: 
 class Device_ExtraCommands(enum.IntEnum):
-	# .......... 2
-	ENTER_OPERATION 				= 0x03,
-	ENTER_CONFIG					= 0x04,
-	TUNE							= 0x05,
-	EXTERNAL_TRAJECTORY_SETPOINT 	= 0x06,
 	# .......... 10
+	EXTERNAL_TRAJECTORY_SETPOINT 	= 0x11,
+	TUNE							= 0x12,
+	# .......... 39
 
 
 Index_Blue = enum.IntEnum('Index', [
@@ -56,11 +54,14 @@ Index_Blue = enum.IntEnum('Index', [
 	'DesiredMaxSpeed',
 	'Setpoint',
 	# user parameter end
+	'Config_TimeStamp',
+	'Config_Description',
 	'CRCValue',
 ], start=0)
 
 
-def scan_BLUE_devices(port:SerialPort):
+
+def scan_blue_devices(port:SerialPort):
 	device = Blue(0, port)
 	available_devices = []
 
@@ -78,7 +79,12 @@ class Blue(SMD_Device):
 	_STATUS_KEY_LIST = ['EEPROM', 'Software Version', 'Hardware Version']
 	__RELEASE_URL = "https://api.github.com/repos/AAcrome-Smart-Motion-Devices/SMD-Blue-Firmware/releases/{version}"
 
-	
+	class Operation_Mode():
+		Position_Internal_Trajectory = 0
+		Position_External_Trajectory = 1
+		Velocity = 2
+
+
 	def __init__(self, ID, port:SerialPort) -> bool:
 		self.__ack_size = 0
 		if ID > 254 or ID < 0:
@@ -117,7 +123,9 @@ class Blue(SMD_Device):
 			Data_(Index_Blue.DesiredAccel, 'f'),
 			Data_(Index_Blue.DesiredMaxSpeed, 'f'),
 			Data_(Index_Blue.Setpoint, 'f'),
-			# user parameter end			
+			# user parameter end
+			Data_(Index_Blue.Config_TimeStamp, 'Q'),
+			Data_(Index_Blue.Config_Description, '100s'),
             Data_(Index_Blue.CRCValue, 'I'),
         ]
 		super().__init__(ID, self._PRODUCT_TYPE, device_special_data, port)
@@ -222,5 +230,6 @@ class Blue(SMD_Device):
     	    en (bool): Enable. True enables the torque.
     	"""
 
-		self.set_variables([[Index_Blue.TorqueEnable, en]])
+		self.set_variables([Index_Blue.Enable, en])
 		self._post_sleep()
+
