@@ -32,8 +32,11 @@ Index_Blue = enum.IntEnum('Index', [
 	# user parameter start
 	'OperationMode',
 	'Enable',
-	'CurrentSetting',
+	'CurrentSetting_Drive',
+	'CurrentSetting_Hold',
 	'Microstepping',
+	'AutoStepInterpolation_enable',
+	'AutoStepInterpolation_setting',
 	'MaxAcceleration',
 	'MaxDeceleration',
 	'MaxSpeed',
@@ -83,6 +86,25 @@ class Blue(SMD_Device):
 		Position_Internal_Trajectory = 0
 		Position_External_Trajectory = 1
 		Velocity = 2
+	
+	class microStepping():
+		FULL_STEP 				= 0b0000
+		FULL_STEP_71 			= 0b0001
+		HALF_STEP_NON_CIRCULAR 	= 0b0010
+		HALF_STEP 				= 0b0011
+		_4_STEP					= 0b0100
+		_8_STEP 				= 0b0101
+		_16_STEP 				= 0b0110
+		_32_STEP 				= 0b0111
+		_64_STEP 				= 0b1000
+		_128_STEP 				= 0b1001
+		_256_STEP 				= 0b1010
+
+	class autoStepInterpolation():
+		_256_Interpolation 	= 0b00
+		_128_Interpolation 	= 0b01
+		_64_Interpolation	= 0b10
+		_32_Interpolation	= 0b11
 
 
 	def __init__(self, ID, port:SerialPort) -> bool:
@@ -102,8 +124,11 @@ class Blue(SMD_Device):
 			# user parameter starts
 			Data_(Index_Blue.OperationMode, 'B'),
 			Data_(Index_Blue.Enable, 'B'),
-			Data_(Index_Blue.CurrentSetting, 'B'),
+			Data_(Index_Blue.CurrentSetting_Drive, 'B'),
+			Data_(Index_Blue.CurrentSetting_Hold, 'B'),
 			Data_(Index_Blue.Microstepping, 'B'),
+			Data_(Index_Blue.AutoStepInterpolation_enable, 'B'),
+			Data_(Index_Blue.AutoStepInterpolation_setting, 'B'),
 			Data_(Index_Blue.MaxAcceleration, 'f'),
 			Data_(Index_Blue.MaxDeceleration, 'f'),
 			Data_(Index_Blue.MaxSpeed, 'f'),
@@ -233,3 +258,28 @@ class Blue(SMD_Device):
 		self.set_variables([Index_Blue.Enable, en])
 		self._post_sleep()
 
+	def set_microstepping(self, microstepping:int, auto_stepping_enable:bool = True, auto_stepping_interpolation:int= autoStepInterpolation._256_Interpolation):
+		if (microstepping > self.microStepping._256_STEP or microstepping < 0):
+			raise "microstepping is not valid."
+		if (auto_stepping_interpolation > self.autoStepInterpolation._32_Interpolation or auto_stepping_interpolation < self.autoStepInterpolation._256_Interpolation):
+			raise "auto_stepping_interpolation is not valid."
+		
+		self.set_variables([Index_Blue.Microstepping, microstepping], [Index_Blue.AutoStepInterpolation_enable, auto_stepping_enable], [Index_Blue.AutoStepInterpolation_setting, auto_stepping_interpolation])
+		self._post_sleep()
+
+
+	def set_config_timeStamp(self):
+		epoch_seconds = int(time.time())
+		self.set_variables([Index_Blue.Config_TimeStamp, epoch_seconds])
+		self._post_sleep()
+		
+	def set_config_description(self, description:str):
+		if len(description) >= 100:
+			text = description[:99] + '\0'
+		else:
+			text = description + '\0'
+			text = text.ljust(100, ' ')
+		text = text.encode('ascii')  # veya utf-8 eğer uyumluysa
+
+		self.set_variables([Index_Blue.Config_Description, text])
+		self._post_sleep()

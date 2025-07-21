@@ -6,14 +6,28 @@ red_1 = Red(0, port)
 blue = Blue(0, port)
 #print(scan_blue_devices(port))
 
-#blue.set_variables([Index_Blue.OperationMode, Blue.Operation_Mode.Position_Internal_Trajectory])
-#blue.enter_operation()
-blue.enable_torque(True)
+def configure():
+    blue.set_variables([Index_Blue.OperationMode, Blue.Operation_Mode.Position_Internal_Trajectory])
+    blue.set_microstepping(Blue.microStepping.FULL_STEP, False, Blue.autoStepInterpolation._256_Interpolation)
 
-#blue.set_variables([Index_Blue.Microstepping, 2])
+
+
+
+
+#blue.set_config_timeStamp()
+text = "hello " + 90*"a" + "end" + " " + "aaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+text2 = "hello world"
+#blue.set_config_description(text)
+blue.set_config_description(text)
+
+#configure()
+#blue.enter_operation()
+#blue.enable_torque(True)
+#blue.set_variables([Index_Blue.TargetPosition, 6000])
+
 
 #blue.enter_configuration()
-#blue.set_variables([Index_Blue.TargetPosition, 100000])
+
 
 
 #blue.set_variables([Index_Blue.Config_TimeStamp, 123])
@@ -21,4 +35,7 @@ blue.enable_torque(True)
 
 #blue.set_config_description()
 #blue.set_config_timeStamp()
+
+
+
 

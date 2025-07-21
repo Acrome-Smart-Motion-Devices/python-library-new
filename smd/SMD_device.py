@@ -212,8 +212,6 @@ class SMD_Device():
         
         flattened_list = [item for sublist in idx_val_pairs for item in sublist]
 
-        print(flattened_list)
-
         struct_out = list(struct.pack(fmt_str, *[self._header, self._id, self._device_family, size + SMD_PING_PACKAGE_SIZE, Device_Commands.WRITE, 0, *flattened_list]))
         struct_out = bytes(struct_out) + struct.pack('<' + 'I', CRC32.calc(struct_out))
         self._ack_size = SMD_PING_PACKAGE_SIZE
