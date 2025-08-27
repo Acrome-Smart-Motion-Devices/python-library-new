@@ -12,16 +12,6 @@ HEADER, ID, DEVICE_FAMILY, PACKAGE_SIZE, COMMAND, STATUS, .............. DATA ..
 SMD_SERIAL_HEADER = 0x55
 SMD_PING_PACKAGE_SIZE = 10
 
-Index_Protocol = enum.IntEnum('Index', [
-    'Header',
-    'DeviceID',
-    'DeviceFamily',
-    'PackageSize',
-    'Command',
-    'Status',
-    'CRCValue',
-    ], start=0)
-
 #Classical Device Indexes
 Index_Device_Classical = enum.IntEnum('Index', [
 	'Header',
@@ -46,10 +36,11 @@ class Device_Commands(enum.IntEnum):
     EEPROM_SAVE = 0x03
     ERROR_CLEAR = 0x04
     REBOOT = 0x05
-    HARD_RESET = 0x06
+    EEPROM_RESET = 0x06
     BL_JUMP = 0x07
     ENTER_CONFIGURATION = 0x08
     ENTER_OPERATION = 0x09
+    ERROR = 0x10
 
     ENTER_CONFIGURATION_ACK = 0x80 | 0x08       # ACK | ENTER_CONFIGURATION
     ENTER_OPERATION_ACK = 0x80 | 0x09           # ACK | ENTER_OPERATION
@@ -144,7 +135,7 @@ class SMD_Device():
             return False
         if len(ret) == self._ack_size:
             if (CRC32.calc(ret[:-4]) == struct.unpack('<I', ret[-4:])[0]):
-                if ret[Index_Protocol.PackageSize] > SMD_PING_PACKAGE_SIZE:
+                if ret[Index_Device_Classical.PackageSize] > SMD_PING_PACKAGE_SIZE:
                     self._parse_received(ret)
                     return True
                 else:
@@ -231,7 +222,7 @@ class SMD_Device():
         self._pure_command_send(Device_Commands.EEPROM_SAVE)
         
     def factory_reset(self, ack=False):
-        self._pure_command_send(Device_Commands.FACTORY_RESET)
+        self._pure_command_send(Device_Commands.EEPROM_RESET)
 
     def enter_bootloader(self):
         self._pure_command_send(Device_Commands.BL_JUMP)

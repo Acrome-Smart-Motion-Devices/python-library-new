@@ -13,10 +13,8 @@ from smd.SMD_device import *
 class InvalidIndexError(BaseException):
     pass
 
-
 class UnsupportedHardware(BaseException):
     pass
-
 
 class UnsupportedFirmware(BaseException):
     pass
@@ -38,7 +36,7 @@ Index_Red = enum.IntEnum('Index', [
 	'Status',
 	'HardwareVersion',
 	'SoftwareVersion',
-	'Baudrate', #'WritableStart' = iBaudrate
+	'Baudrate',
 	# user parameter start
     'OperationMode',
     'TorqueEnable',
