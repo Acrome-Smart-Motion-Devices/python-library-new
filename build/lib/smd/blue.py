@@ -12,12 +12,14 @@ from smd.SMD_device import *
 
 
 # enter here for extra commands: 
-#class Device_ExtraCommands(enum.IntEnum):
-	# .......... start with 11
-	# .......... end of extra commmands max: 39
+class Device_ExtraCommands(enum.IntEnum):
+	# .......... 10
+	EXTERNAL_TRAJECTORY_SETPOINT 	= 0x11,
+	TUNE							= 0x12,
+	# .......... 39
 
 
-Index_Green = enum.IntEnum('Index', [
+Index_Blue = enum.IntEnum('Index', [
 	'Header',
 	'DeviceID',
 	'DeviceFamily',
@@ -30,42 +32,30 @@ Index_Green = enum.IntEnum('Index', [
 	# user parameter start
 	'OperationMode',
 	'Enable',
-	'Vbus_read',
-	'Temprature_read',
-	'currentId_loop_kp',
-	'currentId_loop_ki',
-	'currentId_loop_kd',
-	'currentIq_loop_kp',
-	'currentIq_loop_ki',
-	'currentIq_loop_kd',
-	'velocity_loop_kp',
-	'velocity_loop_ki',
-	'velocity_loop_kd',
-	'position_loop_kp',
-	'position_loop_ki',
-	'position_loop_kd',
-	'max_position',
-	'min_position',
-	'max_velocity',
-	'max_current',
-	'current_Va',
-	'current_Vb',
-	'current_Vc',
-	'current_Ia',
-	'current_Ib',
-	'current_Ic',
-	'current_Id',
-	'current_Iq',
-	'current_velocity',
-	'current_position',
-	'current_electrical_degree',
-	'current_electrical_radian',
-	'setpoint_current',
-	'setpoint_velocity',
-	'setpoint_position',
-	'openloop_voltage_size',
-	'openloop_angle_degree',
-	'current_lock_angle_degree',
+	'CurrentSetting_Drive',
+	'CurrentSetting_Hold',
+	'Microstepping',
+	'AutoStepInterpolation_enable',
+	'AutoStepInterpolation_setting',
+	'MaxAcceleration',
+	'MaxDeceleration',
+	'MaxSpeed',
+	'MaxPosition',
+	'MinPosition',
+	'ExternalSetpoint_BufferSize',
+	'ExternalSetpoint_PhaseDelay',
+	'ExternalSetpoint_IntervalTime',
+	'CurrentPosition',
+	'CurrentSpeed',
+	'CurrentAccel',
+	'LimitSwitch_1',
+	'LimitSwitch_2',
+	'TargetVelocity',
+	'TargetPosition',
+	'DesiredTime',
+	'DesiredAccel',
+	'DesiredMaxSpeed',
+	'Setpoint',
 	# user parameter end
 	'Config_TimeStamp',
 	'Config_Description',
@@ -86,79 +76,85 @@ def scan_blue_devices(port:SerialPort):
 	return available_devices
 
 
-class Green(SMD_Device):
-	_PRODUCT_TYPE = 0xDA
+class Blue(SMD_Device):
+	_PRODUCT_TYPE = 0xCA
 	_PACKAGE_ESSENTIAL_SIZE = 6
 	_STATUS_KEY_LIST = ['EEPROM', 'Software Version', 'Hardware Version']
 	__RELEASE_URL = "https://api.github.com/repos/AAcrome-Smart-Motion-Devices/SMD-Blue-Firmware/releases/{version}"
 
 	class Operation_Mode():
-		OPERATION_OPENLOOP = 0
-		OPERATION_CURRENT_LOCK = 1
-		OPERATION_FOC_TORQUE = 2
-		OPERATION_FOC_VELOCITY = 3
-		OPERATION_FOC_POSITION = 4
+		Position_Internal_Trajectory = 0
+		Position_External_Trajectory = 1
+		Velocity = 2
+	
+	class microStepping():
+		FULL_STEP 				= 0b0000
+		FULL_STEP_71 			= 0b0001
+		HALF_STEP_NON_CIRCULAR 	= 0b0010
+		HALF_STEP 				= 0b0011
+		_4_STEP					= 0b0100
+		_8_STEP 				= 0b0101
+		_16_STEP 				= 0b0110
+		_32_STEP 				= 0b0111
+		_64_STEP 				= 0b1000
+		_128_STEP 				= 0b1001
+		_256_STEP 				= 0b1010
+
+	class autoStepInterpolation():
+		_256_Interpolation 	= 0b00
+		_128_Interpolation 	= 0b01
+		_64_Interpolation	= 0b10
+		_32_Interpolation	= 0b11
+
 
 	def __init__(self, ID, port:SerialPort) -> bool:
 		self.__ack_size = 0
 		if ID > 254 or ID < 0:
 			raise ValueError("Device ID can not be higher than 254 or lower than 0!")
 		device_special_data = [
-            Data_(Index_Green.Header, 'B', False, 0x55),
-            Data_(Index_Green.DeviceID, 'B'),
-			Data_(Index_Green.DeviceFamily, 'B'),
-            Data_(Index_Green.PackageSize, 'B'),
-            Data_(Index_Green.Command, 'B'),
-			Data_(Index_Green.Status, 'B'),
-            Data_(Index_Green.HardwareVersion, 'I'),
-            Data_(Index_Green.SoftwareVersion, 'I'),
-            Data_(Index_Green.Baudrate, 'I'),
+            Data_(Index_Blue.Header, 'B', False, 0x55),
+            Data_(Index_Blue.DeviceID, 'B'),
+			Data_(Index_Blue.DeviceFamily, 'B'),
+            Data_(Index_Blue.PackageSize, 'B'),
+            Data_(Index_Blue.Command, 'B'),
+			Data_(Index_Blue.Status, 'B'),
+            Data_(Index_Blue.HardwareVersion, 'I'),
+            Data_(Index_Blue.SoftwareVersion, 'I'),
+            Data_(Index_Blue.Baudrate, 'I'),
 			# user parameter starts
-			Data_(Index_Green.OperationMode, 'B'),
-			Data_(Index_Green.Enable, 'B'),
-			Data_(Index_Green.Vbus_read, 'f'),
-			Data_(Index_Green.Temprature_read, 'f'),
-			Data_(Index_Green.currentId_loop_kp, 'f'),
-			Data_(Index_Green.currentId_loop_ki, 'f'),
-			Data_(Index_Green.currentId_loop_kd, 'f'),
-			Data_(Index_Green.currentIq_loop_kp, 'f'),
-			Data_(Index_Green.currentIq_loop_ki, 'f'),
-			Data_(Index_Green.currentIq_loop_kd, 'f'),
-			Data_(Index_Green.velocity_loop_kp, 'f'),
-			Data_(Index_Green.velocity_loop_ki, 'f'),
-			Data_(Index_Green.velocity_loop_kd, 'f'),
-			Data_(Index_Green.position_loop_kp, 'f'),
-			Data_(Index_Green.position_loop_ki, 'f'),
-			Data_(Index_Green.position_loop_kd, 'f'),
-			Data_(Index_Green.max_position, 'i'),
-			Data_(Index_Green.min_position, 'i'),
-			Data_(Index_Green.max_velocity, 'f'),
-			Data_(Index_Green.max_current, 'f'),
-			Data_(Index_Green.current_Va, 'f'),
-			Data_(Index_Green.current_Vb, 'f'),
-			Data_(Index_Green.current_Vc, 'f'),
-			Data_(Index_Green.current_Ia, 'f'),
-			Data_(Index_Green.current_Ib, 'f'),
-			Data_(Index_Green.current_Ic, 'f'),
-			Data_(Index_Green.current_Id, 'f'),
-			Data_(Index_Green.current_Iq, 'f'),
-			Data_(Index_Green.current_velocity, 'f'),
-			Data_(Index_Green.current_position, 'i'),
-			Data_(Index_Green.current_electrical_degree, 'f'),
-			Data_(Index_Green.current_electrical_radian, 'f'),
-			Data_(Index_Green.setpoint_current, 'f'),
-			Data_(Index_Green.setpoint_velocity, 'f'),
-			Data_(Index_Green.setpoint_position, 'i'),
-			Data_(Index_Green.openloop_voltage_size, 'f'),
-			Data_(Index_Green.openloop_angle_degree, 'f'),
-			Data_(Index_Green.current_lock_angle_degree, 'f'),
+			Data_(Index_Blue.OperationMode, 'B'),
+			Data_(Index_Blue.Enable, 'B'),
+			Data_(Index_Blue.CurrentSetting_Drive, 'B'),
+			Data_(Index_Blue.CurrentSetting_Hold, 'B'),
+			Data_(Index_Blue.Microstepping, 'B'),
+			Data_(Index_Blue.AutoStepInterpolation_enable, 'B'),
+			Data_(Index_Blue.AutoStepInterpolation_setting, 'B'),
+			Data_(Index_Blue.MaxAcceleration, 'f'),
+			Data_(Index_Blue.MaxDeceleration, 'f'),
+			Data_(Index_Blue.MaxSpeed, 'f'),
+			Data_(Index_Blue.MaxPosition, 'i'),
+			Data_(Index_Blue.MinPosition, 'i'),
+			Data_(Index_Blue.ExternalSetpoint_BufferSize, 'H'),
+			Data_(Index_Blue.ExternalSetpoint_PhaseDelay, 'H'),
+			Data_(Index_Blue.ExternalSetpoint_IntervalTime, 'I'),
+			Data_(Index_Blue.CurrentPosition, 'd'),
+			Data_(Index_Blue.CurrentSpeed, 'd'),
+			Data_(Index_Blue.CurrentAccel, 'd'),
+			Data_(Index_Blue.LimitSwitch_1, 'B'),
+			Data_(Index_Blue.LimitSwitch_2, 'B'),
+			Data_(Index_Blue.TargetVelocity, 'f'),
+			Data_(Index_Blue.TargetPosition, 'i'),
+			Data_(Index_Blue.DesiredTime, 'f'),
+			Data_(Index_Blue.DesiredAccel, 'f'),
+			Data_(Index_Blue.DesiredMaxSpeed, 'f'),
+			Data_(Index_Blue.Setpoint, 'f'),
 			# user parameter end
-			Data_(Index_Green.Config_TimeStamp, 'Q'),
-			Data_(Index_Green.Config_Description, '100s'),
-            Data_(Index_Green.CRCValue, 'I'),
+			Data_(Index_Blue.Config_TimeStamp, 'Q'),
+			Data_(Index_Blue.Config_Description, '100s'),
+            Data_(Index_Blue.CRCValue, 'I'),
         ]
 		super().__init__(ID, self._PRODUCT_TYPE, device_special_data, port)
-		self._vars[Index_Green.DeviceID].value(ID)
+		self._vars[Index_Blue.DeviceID].value(ID)
 
 	# user start for extra commands.
 	#def command(self): 
@@ -259,12 +255,22 @@ class Green(SMD_Device):
     	    en (bool): Enable. True enables the torque.
     	"""
 
-		self.set_variables([Index_Green.Enable, en])
+		self.set_variables([Index_Blue.Enable, en])
 		self._post_sleep()
+
+	def set_microstepping(self, microstepping:int, auto_stepping_enable:bool = True, auto_stepping_interpolation:int= autoStepInterpolation._256_Interpolation):
+		if (microstepping > self.microStepping._256_STEP or microstepping < 0):
+			raise "microstepping is not valid."
+		if (auto_stepping_interpolation > self.autoStepInterpolation._32_Interpolation or auto_stepping_interpolation < self.autoStepInterpolation._256_Interpolation):
+			raise "auto_stepping_interpolation is not valid."
+		
+		self.set_variables([Index_Blue.Microstepping, microstepping], [Index_Blue.AutoStepInterpolation_enable, auto_stepping_enable], [Index_Blue.AutoStepInterpolation_setting, auto_stepping_interpolation])
+		self._post_sleep()
+
 
 	def set_config_timeStamp(self):
 		epoch_seconds = int(time.time())
-		self.set_variables([Index_Green.Config_TimeStamp, epoch_seconds])
+		self.set_variables([Index_Blue.Config_TimeStamp, epoch_seconds])
 		self._post_sleep()
 		
 	def set_config_description(self, description:str):
@@ -275,44 +281,5 @@ class Green(SMD_Device):
 			text = text.ljust(100, ' ')
 		text = text.encode('ascii')  # veya utf-8 eğer uyumluysa
 
-		self.set_variables([Index_Green.Config_Description, text])
+		self.set_variables([Index_Blue.Config_Description, text])
 		self._post_sleep()
-
-
-
-	def get_FOC_parameters(self, package_number:int):
-		if package_number >= 3:
-			raise "invalid package number ex: 0, 1, 2"
-		classic_package = [
-			Index_Green.Enable,
-			Index_Green.current_Id, Index_Green.current_Iq,
-			Index_Green.current_velocity, Index_Green.current_position,
-			Index_Green.Temprature_read,
-		]
-		package_0 = [
-			Index_Green.currentId_loop_kp, 
-			Index_Green.currentId_loop_ki, 
-			Index_Green.currentId_loop_kd, 
-			Index_Green.currentIq_loop_kp, 
-			Index_Green.currentIq_loop_ki, 
-			Index_Green.currentIq_loop_kd, 
-		]
-		package_1 = [
-			Index_Green.velocity_loop_kp,
-			Index_Green.velocity_loop_ki,
-			Index_Green.velocity_loop_kd,
-		]
-		package_2 = [
-			Index_Green.position_loop_kp,
-			Index_Green.position_loop_ki,
-			Index_Green.position_loop_kd,
-		]
-
-		if package_number == 0:
-			return self.get_variables(*classic_package , *package_0)
-			
-		elif package_number == 1:
-			return self.get_variables(*classic_package , *package_1)
-			
-		elif package_number == 2:
-			return self.get_variables(*classic_package , *package_2)
