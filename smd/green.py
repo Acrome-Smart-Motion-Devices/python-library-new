@@ -148,7 +148,7 @@ class Green(SMD_Device):
 			Data_(Index_Green.current_electrical_radian, 'f'),
 			Data_(Index_Green.setpoint_current, 'f'),
 			Data_(Index_Green.setpoint_velocity, 'f'),
-			Data_(Index_Green.setpoint_position, 'i'),
+			Data_(Index_Green.setpoint_position, 'f'),
 			Data_(Index_Green.openloop_voltage_size, 'f'),
 			Data_(Index_Green.openloop_angle_degree, 'f'),
 			Data_(Index_Green.current_lock_angle_degree, 'f'),
