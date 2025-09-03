@@ -281,13 +281,14 @@ class Green(SMD_Device):
 
 
 	def get_FOC_parameters(self, package_number:int):
-		if package_number >= 3:
+		if package_number >= 4:
 			raise "invalid package number ex: 0, 1, 2"
 		classic_package = [
 			Index_Green.Enable,
 			Index_Green.current_Id, Index_Green.current_Iq,
 			Index_Green.current_velocity, Index_Green.current_position,
 			Index_Green.Temprature_read,
+			Index_Green.setpoint_current, Index_Green.setpoint_velocity, Index_Green.setpoint_position
 		]
 		package_0 = [
 			Index_Green.currentId_loop_kp, 
@@ -316,3 +317,7 @@ class Green(SMD_Device):
 			
 		elif package_number == 2:
 			return self.get_variables(*classic_package , *package_2)
+		
+		elif package_number == 3:
+			return self.get_variables(*classic_package)
+		
